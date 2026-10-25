@@ -1,0 +1,116 @@
+% Detailed data-plane topology: (a) scale-out leaf--spine fabric, (b) inside one server.
+% Example symmetric configuration c = (w,u,r,e) = (2,4,400,4).
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+  font=\footnotesize, >={Stealth[length=4pt]},
+  spon/.style={draw=green!45!black, fill=green!15, rounded corners=1.5pt, minimum width=1.3cm, minimum height=0.55cm, thick},
+  spoff/.style={draw=gray, fill=gray!10, text=gray, dashed, rounded corners=1.5pt, minimum width=1.3cm, minimum height=0.55cm},
+  leaf/.style={draw=orange!60!black, fill=orange!15, rounded corners=1.5pt, minimum width=1.3cm, minimum height=0.5cm, thick},
+  srvP/.style={draw, fill=red!15, minimum width=0.42cm, minimum height=0.42cm, inner sep=0pt},
+  srvD/.style={draw, fill=cyan!15, minimum width=0.42cm, minimum height=0.42cm, inner sep=0pt},
+  upon/.style={green!45!black, line width=1.3pt},
+  upoff/.style={gray!55, dashed, line width=0.6pt},
+  gpu/.style={draw, fill=violet!12, minimum width=0.66cm, minimum height=0.5cm, inner sep=0pt, font=\scriptsize},
+  nicon/.style={draw=green!45!black, fill=green!15, thick, minimum width=0.66cm, minimum height=0.36cm, inner sep=0pt, font=\scriptsize},
+  nicoff/.style={draw=gray, fill=gray!10, text=gray, dashed, minimum width=0.66cm, minimum height=0.36cm, inner sep=0pt, font=\scriptsize},
+  kv/.style={red!70!black, very thick, ->},
+  bg/.style={orange!85!black, very thick, ->, densely dotted},
+  note/.style={font=\scriptsize, align=center, text=black!75}]
+
+% =========================== (a) scale-out fabric ===========================
+\node[font=\small\bfseries, anchor=west] at (-1.5,7.25) {(a) Scale-out network (leaf--spine)};
+
+\node[spon]  (S1) at (2.0,6.0) {Spine 1};
+\node[spon]  (S2) at (4.6,6.0) {Spine 2};
+\node[spoff] (S3) at (7.2,6.0) {Spine 3};
+\node[font=\small, gray] at (8.5,6.0) {$\cdots$};
+\node[spoff] (SW) at (9.8,6.0) {Spine $W$};
+\node[note] at (3.3,6.62) {$w=2$ of $W=8$ spines on};
+\node[note, text=gray] at (8.5,6.62) {switched off (with all their ports)};
+
+\node[leaf] (L1) at (1.6,3.6) {Leaf 1};
+\node[leaf] (L2) at (5.4,3.6) {Leaf 2};
+\node[font=\small] at (7.3,3.6) {$\cdots$};
+\node[leaf] (LL) at (9.2,3.6) {Leaf $L$};
+\node[note, anchor=west] at (10.0,3.6) {$L=16$ leaves\\ (always on)};
+
+\foreach \l in {L1,L2,LL}{
+  \foreach \s in {S3,SW}{\draw[upoff] (\l.north) -- (\s.south);}
+  \foreach \s in {S1,S2}{\draw[upon] (\l.north) -- (\s.south);}
+}
+
+% zoom on one leaf--spine bundle
+\coordinate (zc) at ($(L1.north)!0.45!(S1.south)$);
+\draw[gray] (zc) circle (0.16);
+\begin{scope}[shift={(-0.75,4.85)}]
+  \draw[gray!70, rounded corners=2pt, fill=white] (-0.6,-0.7) rectangle (0.6,0.7);
+  \foreach \i in {0,...,3}{\draw[upon, line width=0.8pt] (-0.42+0.12*\i,-0.55) -- (-0.42+0.12*\i,0.55);}
+  \foreach \i in {4,...,7}{\draw[upoff] (-0.42+0.12*\i,-0.55) -- (-0.42+0.12*\i,0.55);}
+  \node[note, anchor=north] at (0,-0.75) {one leaf--spine pair:\\ $U=8$ links, $u=4$ on\\ at $r=400$ Gb/s};
+\end{scope}
+\draw[gray] (-0.15,4.85) -- ($(zc)+(-0.16,0)$);
+
+% servers
+\foreach \l/\x in {L1/1.6, L2/5.4, LL/9.2}{
+  \node[srvP] (\l p1) at (\x-0.75,2.1) {P};
+  \node[srvP] (\l p2) at (\x-0.25,2.1) {P};
+  \node[srvD] (\l d1) at (\x+0.25,2.1) {D};
+  \node[srvD] (\l d2) at (\x+0.75,2.1) {D};
+  \foreach \s in {p1,p2,d1,d2}{\draw[gray!70] (\l\s.north) -- (\l.south);}
+}
+\node[note] at (1.6,0.75) {$S/L=8$ servers per leaf\\ (half prefill, half decode)};
+\node[note] at (5.4,0.75) {each server: 8 NIC ports\\ $\times$ 400G to its leaf};
+
+% KV coflow inside one leaf
+\draw[kv] (L1p2.south) to[bend right=60] (L1d1.south);
+\node[note, text=red!70!black] at (1.6,1.35) {KV, leaf-local};
+% KV coflow across leaves via spine 2
+\draw[kv, dashed] (L2d1.north) .. controls (5.9,3.0) and (5.3,4.3) .. (S2.south east);
+\draw[kv, dashed] (S2.east) .. controls (6.6,5.6) and (8.6,4.6) .. (LLd1.north);
+\node[note, text=red!70!black, fill=white, inner sep=1pt] at (7.75,4.95) {KV coflow, cross-leaf};
+% background elephant flow via spine 1
+\draw[bg] (L2p1.north) .. controls (4.4,3.2) and (2.9,4.8) .. (S1.south east);
+\draw[bg] (S1.south west) .. controls (1.1,5.2) and (0.4,3.4) .. (L1p1.north);
+\node[note, text=orange!85!black, fill=white, inner sep=1pt] at (3.55,4.35) {background\\ elephant flow};
+
+% =========================== (b) inside one server ===========================
+\node[font=\small\bfseries, anchor=west] at (12.3,7.25) {(b) Inside one server (scale-up)};
+\draw[rounded corners=3pt, fill=gray!4, draw=gray!70] (12.3,-0.05) rectangle (18.7,6.95);
+\node[draw, fill=blue!10, minimum width=5.9cm, minimum height=0.45cm, font=\scriptsize] (NVS) at (15.5,6.35) {NVSwitch: NVLink scale-up network (always on)};
+\foreach \i in {0,...,7}{
+  \node[gpu] (G\i) at (12.87+0.75*\i,5.25) {GPU\,\i};
+  \draw[blue!50!black, line width=0.9pt] (G\i.north) -- (G\i.north |- NVS.south);
+}
+\foreach \i in {0,2,4,6}{\node[nicon]  (N\i) at (12.87+0.75*\i,2.75) {NIC\,\i};}
+\foreach \i in {1,3,5,7}{\node[nicoff] (N\i) at (12.87+0.75*\i,2.75) {NIC\,\i};}
+% PCIe paths: with e = 4, GPUs 2k and 2k+1 share NIC 2k
+\foreach \k in {0,2,4,6}{
+  \pgfmathtruncatemacro{\j}{\k+1}
+  \draw[kv, line width=0.8pt] ($(G\k.south)+(-0.1,0)$) -- ($(N\k.north)+(-0.1,0)$);
+  \draw[kv, line width=0.8pt] ($(G\j.south)+(-0.1,0)$) -- ++(0,-0.75) -| ($(N\k.north)+(0.12,0)$);
+}
+\node[note, text=red!70!black, fill=gray!4, inner sep=1pt] at (15.5,3.75) {KV coflow: 8 flows, one per GPU, each $\ell^{\rm in}\kappa/8$ bytes};
+% links to the leaf
+\coordinate (leafin) at (15.5,1.45);
+\foreach \i in {1,3,5,7}{\draw[upoff] (N\i.south) -- ++(0,-0.3) -- (leafin);}
+\foreach \i in {0,2,4,6}{\draw[upon, line width=0.9pt] (N\i.south) -- ++(0,-0.3) -- (leafin);}
+\node[leaf, anchor=north] (Lz) at (leafin) {Leaf};
+\node[note, anchor=west] at (12.4,0.35) {$e=4$ of 8 NIC ports on:\\ two GPUs share one port};
+\node[note, anchor=east] at (18.6,0.35) {each NIC port also uses\\ one leaf downlink port};
+
+% zoom link from (a) to (b)
+\draw[gray] (LLd2) circle (0.32);
+\draw[gray, dashed] ($(LLd2)+(0.32,0)$) -- (12.3,2.1);
+
+% =========================== legend ===========================
+\begin{scope}[shift={(-1.2,-0.55)}]
+  \draw[upon] (0,0) -- (0.6,0); \node[note, anchor=west] at (0.65,0) {active link / device};
+  \draw[upoff] (3.2,0) -- (3.8,0); \node[note, anchor=west] at (3.85,0) {switched off};
+  \draw[kv] (6.0,0) -- (6.6,0); \node[note, anchor=west] at (6.65,0) {KV coflow (prefill $\to$ decode)};
+  \draw[bg] (10.2,0) -- (10.8,0); \node[note, anchor=west] at (10.85,0) {background traffic};
+  \node[srvP] at (13.6,0) {P}; \node[note, anchor=west] at (13.85,0) {prefill server};
+  \node[srvD] at (15.9,0) {D}; \node[note, anchor=west] at (16.15,0) {decode server};
+\end{scope}
+\node[anchor=west, font=\scriptsize] at (-1.5,-1.15) {Example symmetric configuration $c=(w,u,r,e)=(2,4,400,4)$: 2 spines on, 4 of 8 uplinks per leaf--spine pair at 400 Gb/s, 4 of 8 NIC ports per server; every leaf and server is configured identically.};
+\end{tikzpicture}%
+}
