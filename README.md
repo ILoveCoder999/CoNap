@@ -15,7 +15,7 @@ Reviewers can verify the paper at three levels of effort:
 
 | Level | What it covers |
 |---|---|
-| **A. Tables and figures from the shipped results** | every number of Tables 3–5 and every data figure is recomputed from the raw results and checked against the paper |
+| **A. Tables and figures from the shipped results** | every number of Tables 4–6 and every data figure is recomputed from the raw results and checked against the paper |
 | **B. Smoke test** | the complete pipeline (simulator, all baselines, dataset generation, evaluator training with conformal calibration, CoNap with the learned evaluator, evaluator comparison) runs end to end at toy scale |
 | **C. Full reproduction** | re-runs all experiments of the paper (1024 GPUs, 24 h) |
 
@@ -25,7 +25,7 @@ Reviewers can verify the paper at three levels of effort:
 pip install -r requirements.txt
 ./reproduce.sh              # levels A + B
 ```
-The script recomputes Tables 3, 4 and 5 from the raw results and checks every value against the paper,
+The script recomputes Tables 4, 5 and 6 from the raw results and checks every value against the paper,
 regenerates all figures (and compiles them into
 `paper_figures/figures_preview.pdf` if `pdflatex` is available), and runs the whole pipeline at toy scale.
 Other modes: `./reproduce.sh tables | smoke | full | evaluator` (`full` and `evaluator` are level C;
@@ -52,19 +52,19 @@ CoNap-artifact/
 │   ├── gen_dataset.py         training/test data for the learned evaluator ("scenario groups")
 │   ├── train_evaluator.py     trains the MLP evaluator + conformal risk control -> conap_evaluator.pt
 │   ├── learned_eval.py        loads the evaluator and judges a batch of candidates (used by the controller)
-│   └── gnn_surrogate.py       evaluator study: MLP vs GNN vs Hybrid vs analytic rule (Table 5)
+│   └── gnn_surrogate.py       evaluator study: MLP vs GNN vs Hybrid vs analytic rule (Table 6)
 ├── scripts/
-│   ├── make_tables.py         Tables 3 and 4 from per-hour results
-│   ├── check_paper_numbers.py compares recomputed Tables 3-4 with the values printed in the paper
-│   ├── make_table5.py         Table 5 and the evaluator numbers of Sec. 6.7, checked against the paper
+│   ├── make_tables.py         Tables 4 and 5 from per-hour results
+│   ├── check_paper_numbers.py compares recomputed Tables 4-5 with the values printed in the paper
+│   ├── make_table5.py         Table 6 and the evaluator numbers of Sec. 6.7, checked against the paper
 │   ├── smoke_test.sh          level B
-│   ├── run_evaluator_study.sh level C, part 1 (evaluator data, Table 5, evaluator for CoNap)
-│   └── run_full_day.sh        level C, part 2 (full-day experiments, Tables 3-4)
+│   ├── run_evaluator_study.sh level C, part 1 (evaluator data, Table 6, evaluator for CoNap)
+│   └── run_full_day.sh        level C, part 2 (full-day experiments, Tables 4-5)
 ├── results/
-│   ├── hourly_1024gpu_60min.csv   raw per-hour results behind Tables 3-4 and Figs. 4-8
+│   ├── hourly_1024gpu_60min.csv   raw per-hour results behind Tables 4-5 and Figs. 4-8
 │   │                              (all 11 policies x 2 scenarios x 24 hours)
 │   ├── conap_evaluator.pt         evaluator used for the full-day CoNap runs (MLP, alpha = 5%)
-│   └── eval_study/gnn_results.csv raw results of the evaluator comparison behind Table 5
+│   └── eval_study/gnn_results.csv raw results of the evaluator comparison behind Table 6
 │                                  (MLP / GNN / Hybrid / analytic rule, with and without conformal calibration, 3 seeds)
 └── paper_figures/
     ├── gen_figures.py         regenerates figures/*.tex (pgfplots) from the results
@@ -88,7 +88,7 @@ All scripts are run from the repository root; the shell scripts set `PYTHONPATH`
 ## 3. Level A — tables and figures from the shipped results
 
 ```bash
-python scripts/make_tables.py                 # prints Tables 3 and 4, writes results/table_*.csv
+python scripts/make_tables.py                 # prints Tables 4 and 5, writes results/table_*.csv
 cd paper_figures && python gen_figures.py     # rewrites figures/*.tex from the data
 pdflatex figures_preview.tex                  # all figures in one PDF (run twice for the legends)
 ```
@@ -105,10 +105,12 @@ NPROC=2 bash scripts/smoke_test.sh            # outputs in ./smoke
 ```
 Runs every component at toy scale (128 GPUs, 3 hours, 60 scenario groups, 30 training epochs).
 It checks that the pipeline works; the numbers are **not** those of the paper.
+With only 60 training groups the conformal margin is very wide, so the toy CoNap usually falls back to the
+all-on configuration (0% saving) and the calibrated evaluators show 100% SLO satisfaction with 0% saving; this is expected.
 
 ## 5. Level C — full reproduction
 
-### 5.1 Learned evaluator (Section 4.3, Section 6.7, Table 5)
+### 5.1 Learned evaluator (Section 4.3, Section 6.7, Table 6)
 
 ```bash
 NPROC=48 bash scripts/run_evaluator_study.sh  # outputs in ./evaluator
@@ -117,7 +119,7 @@ NPROC=48 bash scripts/run_evaluator_study.sh  # outputs in ./evaluator
    groups (link failures + traffic hotspots) for 16–64 servers, and asymmetric test sets with 256 and 512 servers;
 2. compares MLP, GNN, Hybrid and the ElasticTree-style analytic rule, each calibrated with conformal risk control
    at α = 5% and 10%, over 3 seeds (`evaluator/eval_study/gnn_results.csv`, `gnn_results_seeds.csv`,
-   `gnn_plain_summary.csv`), then prints Table 5 with `scripts/make_table5.py`;
+   `gnn_plain_summary.csv`), then prints Table 6 with `scripts/make_table5.py`;
 3. trains the evaluator used by CoNap (MLP, α = 5%) → `evaluator/conap_evaluator.pt`.
 
 The evaluator shipped in `results/conap_evaluator.pt` is the one used for the paper (MLP, α = 5%, trained on the
@@ -125,13 +127,13 @@ combined symmetric + asymmetric data).
 
 `gen_dataset.py` saves `<output>.partial` regularly, so an interrupted run keeps the finished groups.
 
-### 5.2 Full-day experiments (Tables 3–4, Figs. 4–8)
+### 5.2 Full-day experiments (Tables 4–5, Figs. 4–8)
 
 ```bash
 NPROC=48 bash scripts/run_full_day.sh         # outputs in ./runs
 ```
 For each scenario (`base`, `kvheavy`) it runs all policies on the 1024-GPU cluster for 24 hours with a 60-minute
-slow layer, runs CoNap with the learned evaluator, merges the two, and finally prints Tables 3 and 4 with
+slow layer, runs CoNap with the learned evaluator, merges the two, and finally prints Tables 4 and 5 with
 `make_tables.py --from-runs runs`. The evaluator is taken from `$EVALUATOR`, else `results/conap_evaluator.pt`,
 else `evaluator/conap_evaluator.pt`.
 
@@ -153,12 +155,12 @@ Other scales: GPUs ∈ {128, 256, 512, 1024, 2048, 4096, 8192}; slow-layer perio
 |---|---|---|
 | Fig. 1 (Azure trace) | `paper_figures/prepare_azure_trace.py` → `gen_figures.py` | `figures/fig_trace.tex` |
 | Figs. 2–3 (topology, architecture) | drawn by hand in TikZ | `figures/fig_topology.tex`, architecture in the paper source |
-| Table 3, Fig. 4 (saving + violations) | `run_full_day.sh` → `make_tables.py` / `gen_figures.py` | `results/table_main.csv`, `fig_saving.tex` |
+| Table 4, Fig. 4 (saving + violations) | `run_full_day.sh` → `make_tables.py` / `gen_figures.py` | `results/table_main.csv`, `fig_saving.tex` |
 | Fig. 5 (SLO metrics per hour) | same per-hour results | `fig_tail.tex` |
 | Fig. 6 (load + power per hour) | same per-hour results + load curves in `netsim.py` | `fig_power.tex` |
-| Table 4, Fig. 7 (ablation) | same per-hour results (CoNap-Sim variants) | `results/table_ablation.csv`, `fig_ablation.tex` |
+| Table 5, Fig. 7 (ablation) | same per-hour results (CoNap-Sim variants) | `results/table_ablation.csv`, `fig_ablation.tex` |
 | Fig. 8 (energy breakdown) | same per-hour results | `fig_breakdown.tex` |
-| Table 5, evaluator numbers of Sec. 6.7 | shipped: `scripts/make_table5.py`; regenerate: `run_evaluator_study.sh` (`gnn_surrogate.py`) | `results/eval_study/table5.csv` |
+| Table 6, evaluator numbers of Sec. 6.7 | shipped: `scripts/make_table5.py`; regenerate: `run_evaluator_study.sh` (`gnn_surrogate.py`) | `results/eval_study/table5.csv` |
 | CoNap decision time per period | `run_day.py` with `ours_mlp` | `decide_time.csv` + console |
 
 Policy names in the code and in the paper:
@@ -172,7 +174,7 @@ Policy names in the code and in the paper:
 | `ours_core` | CoNap-Sim w/o placement, rate and NIC ports |
 | `allon`, `elastictree`, `et_hedera`, `smartfct`, `wang22`, `oracle` | All-on, ElasticTree, ET+Hedera, SmartFCT-like, Wang22-like, Oracle |
 
-## 7. Key parameters (Table 1 of the paper)
+## 7. Key parameters (Table 2 of the paper)
 
 | Parameter | Location |
 |---|---|

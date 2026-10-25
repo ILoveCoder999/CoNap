@@ -59,8 +59,8 @@ def check(path, paper, cols, tols, name):
 if __name__ == "__main__":
     main = sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "results", "table_main.csv")
     abl = sys.argv[2] if len(sys.argv) > 2 else os.path.join(ROOT, "results", "table_ablation.csv")
-    bad = check(main, PAPER_MAIN, ["energy_kwh", "saving_pct", "violations", "worst_sd", "min_bg", "mean_spines"], TOL, "Table 3")
+    bad = check(main, PAPER_MAIN, ["energy_kwh", "saving_pct", "violations", "worst_sd", "min_bg", "mean_spines"], TOL, "Table 4")
     bad += check(abl, PAPER_ABL, ["saving_pct", "wu_kwh", "violations", "worst_sd", "mean_spines"],
-                 (0.051, 0.051, 0, 0.0051, 0.0051), "Table 4")
+                 (0.051, 0.051, 0, 0.0051, 0.0051), "Table 5")
     print("ALL VALUES MATCH THE PAPER" if bad == 0 else f"{bad} row(s) differ from the paper")
     sys.exit(1 if bad else 0)

@@ -14,11 +14,11 @@ fi
 $PY -c "import sys, numpy, pandas, torch; print(f'python {sys.version.split()[0]}, numpy {numpy.__version__}, pandas {pandas.__version__}, torch {torch.__version__}')"
 
 tables() {
-  line "1/3 Tables 3 and 4 from the raw per-hour results (results/hourly_1024gpu_60min.csv)"
+  line "1/3 Tables 4 and 5 from the raw per-hour results (results/hourly_1024gpu_60min.csv)"
   $PY scripts/make_tables.py
   echo
   $PY scripts/check_paper_numbers.py
-  line "Table 5 from the raw evaluator-study results (results/eval_study/gnn_results.csv)"
+  line "Table 6 from the raw evaluator-study results (results/eval_study/gnn_results.csv)"
   $PY scripts/make_table5.py
   line "2/3 figures (pgfplots sources in paper_figures/figures/)"
   (cd paper_figures && $PY gen_figures.py)

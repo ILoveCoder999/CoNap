@@ -30,7 +30,7 @@ if __name__ == "__main__":
 
     t = pd.DataFrame({lab: [r1(mean.loc[(m, s), "slo"]) for s in SPLITS] for m, lab in ROWS.items()},
                      index=list(SPLITS.values())).T
-    print("Table 5: SLO satisfaction rate (%) of the configurations selected by each evaluator")
+    print("Table 6: SLO satisfaction rate (%) of the configurations selected by each evaluator")
     print("(learned models calibrated to alpha = 5%; analytic rule uncalibrated; mean over seeds)\n")
     print(t.to_string())
     bad = 0

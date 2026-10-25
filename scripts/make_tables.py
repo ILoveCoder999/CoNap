@@ -58,8 +58,8 @@ if __name__ == "__main__":
     g = summarize(load(sys.argv))
     assert (g.periods == 24).all(), "every policy must have 24 periods"
     main = show(g, MAIN, ["energy_kwh", "saving_pct", "violations", "worst_sd", "min_bg", "mean_spines"],
-                "Table 3: full-day results (1024 GPUs, 60-min slow layer)")
-    abl = show(g, ABL, ["saving_pct", "wu_kwh", "violations", "worst_sd", "mean_spines"], "Table 4: ablation")
+                "Table 4: full-day results (1024 GPUs, 60-min slow layer)")
+    abl = show(g, ABL, ["saving_pct", "wu_kwh", "violations", "worst_sd", "mean_spines"], "Table 5: ablation")
     out = sys.argv[2] if (len(sys.argv) > 2 and sys.argv[1] == "--from-runs") else os.path.join(ROOT, "results")
     os.makedirs(out, exist_ok=True)
     main.to_csv(os.path.join(out, "table_main.csv"), index=False)
