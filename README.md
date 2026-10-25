@@ -13,20 +13,20 @@ Everything is evaluated with a flow-level simulator included here.
 
 Reviewers can verify the paper at three levels of effort:
 
-| Level | What it shows | Time |
-|---|---|---|
-| **A. Tables and figures from the shipped results** | every number of Tables 3–5 and every data figure is recomputed from the raw results and checked against the paper | < 1 min, laptop |
-| **B. Smoke test** | the complete pipeline (simulator, all baselines, dataset generation, evaluator training with conformal calibration, CoNap with the learned evaluator, evaluator comparison) runs end to end at toy scale | ~1.5 min, 2 cores |
-| **C. Full reproduction** | re-runs all experiments of the paper (1024 GPUs, 24 h) | many hours on a multi-core server (we used 48 cores + 1 GPU) |
+| Level | What it covers |
+|---|---|
+| **A. Tables and figures from the shipped results** | every number of Tables 3–5 and every data figure is recomputed from the raw results and checked against the paper |
+| **B. Smoke test** | the complete pipeline (simulator, all baselines, dataset generation, evaluator training with conformal calibration, CoNap with the learned evaluator, evaluator comparison) runs end to end at toy scale |
+| **C. Full reproduction** | re-runs all experiments of the paper (1024 GPUs, 24 h) |
 
 ## 0. One-click reproduction
 
 ```bash
 pip install -r requirements.txt
-./reproduce.sh              # levels A + B: ~2-3 minutes on 2 cores
+./reproduce.sh              # levels A + B
 ```
-The script recomputes Tables 3, 4 and 5 from the raw results and checks every value against the paper
-(expected final line: `ALL VALUES MATCH THE PAPER`), regenerates all figures (and compiles them into
+The script recomputes Tables 3, 4 and 5 from the raw results and checks every value against the paper,
+regenerates all figures (and compiles them into
 `paper_figures/figures_preview.pdf` if `pdflatex` is available), and runs the whole pipeline at toy scale.
 Other modes: `./reproduce.sh tables | smoke | full | evaluator` (`full` and `evaluator` are level C;
 set `NPROC` to the number of cores to use).
@@ -85,7 +85,7 @@ A GPU is optional (it only speeds up evaluator training). For the figures, any T
 
 All scripts are run from the repository root; the shell scripts set `PYTHONPATH` to `code/` themselves.
 
-## 3. Level A — tables and figures from the shipped results (< 1 min)
+## 3. Level A — tables and figures from the shipped results
 
 ```bash
 python scripts/make_tables.py                 # prints Tables 3 and 4, writes results/table_*.csv
@@ -94,11 +94,11 @@ pdflatex figures_preview.tex                  # all figures in one PDF (run twic
 ```
 `make_tables.py` recomputes daily energy, saving vs. All-on, SLO-violation hours, worst P99 slowdown,
 minimum background satisfaction and mean number of active spines directly from the per-hour rows,
-and prints the fraction of the oracle saving reached by CoNap (97.8% / 99.7%).
+and prints the fraction of the oracle saving reached by CoNap.
 `gen_figures.py` asserts that the daily energy and the number of violations of every curve match the tables
 before writing a figure.
 
-## 4. Level B — smoke test (~1.5 min)
+## 4. Level B — smoke test
 
 ```bash
 NPROC=2 bash scripts/smoke_test.sh            # outputs in ./smoke
@@ -121,10 +121,9 @@ NPROC=48 bash scripts/run_evaluator_study.sh  # outputs in ./evaluator
 3. trains the evaluator used by CoNap (MLP, α = 5%) → `evaluator/conap_evaluator.pt`.
 
 The evaluator shipped in `results/conap_evaluator.pt` is the one used for the paper (MLP, α = 5%, trained on the
-combined symmetric + asymmetric data; slowdown margin ×exp(0.158) = ×1.17, background margin 0.0128).
+combined symmetric + asymmetric data).
 
-Data generation dominates the run time (many hours on 48 cores); training takes about one minute per model on
-one GPU. `gen_dataset.py` saves `<output>.partial` regularly, so an interrupted run keeps the finished groups.
+`gen_dataset.py` saves `<output>.partial` regularly, so an interrupted run keeps the finished groups.
 
 ### 5.2 Full-day experiments (Tables 3–4, Figs. 4–8)
 
@@ -188,8 +187,9 @@ Policy names in the code and in the paper:
 
 All randomness is seeded. Re-running a configuration reproduces the per-hour results exactly; the evaluator
 training is deterministic on CPU with a fixed seed (on GPU, cuDNN may introduce tiny floating-point differences).
-Wall-clock columns (`sim_seconds`, decision times) naturally differ between machines. Rows of
-`gen_dataset.py` outputs are written in completion order and should be compared after sorting by `gid`.
+Wall-clock columns (`sim_seconds`, decision times) naturally differ between machines. `gen_dataset.py` writes
+its rows sorted by scenario group (`gid`), so the generated data and the train/validation/calibration splits
+do not depend on the number of worker processes.
 
 ## 9. Third-party data
 

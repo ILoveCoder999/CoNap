@@ -101,7 +101,7 @@ if __name__ == "__main__":
                 print(f"  {i}/{n_groups} groups, {len(rows)} samples, elapsed {el/60:.1f} min, "
                       f"est. remaining {el/i*(n_groups-i)/60:.1f} min (rough: group runtimes vary widely)", flush=True)
                 pd.DataFrame(rows).to_csv(out + ".partial", index=False)
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows).sort_values("gid", kind="stable").reset_index(drop=True)
     df.to_csv(out, index=False)
     if os.path.exists(out + ".partial"):
         os.remove(out + ".partial")
